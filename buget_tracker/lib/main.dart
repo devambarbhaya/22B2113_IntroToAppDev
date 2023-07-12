@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const BudgetTrackerApp());
+  runApp(BudgetTrackerApp());
 }
 
 class BudgetTrackerApp extends StatelessWidget {
-  const BudgetTrackerApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -14,194 +12,184 @@ class BudgetTrackerApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const HomeScreen(),
+      home: HomeScreen(),
     );
   }
 }
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final List<Category> categories = [
+    Category(name: 'Food', expenses: [
+      Expense(value: 20.0, description: 'Lunch'),
+      Expense(value: 30.0, description: 'Dinner'),
+    ]),
+    Category(name: 'Transportation', expenses: [
+      Expense(value: 15.0, description: 'Bus fare'),
+      Expense(value: 25.0, description: 'Gasoline'),
+    ]),
+  ];
 
   @override
   Widget build(BuildContext context) {
+    double totalExpenses = 0.0;
+    for (var category in categories) {
+      totalExpenses += category.getTotalExpenses();
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Budget Tracker'),
+        title: Text('Budget Tracker'),
       ),
-      body: const Column(
+      body: Column(
         children: [
-          UserInfo(),
-          ExpenseTotal(),
-          CategoryList(),
-        ],
-      ),
-    );
-  }
-}
-
-class UserInfo extends StatelessWidget {
-  const UserInfo({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: const Text('User Information'),
-    );
-  }
-}
-
-class ExpenseTotal extends StatelessWidget {
-  const ExpenseTotal({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: const Text('Expense Total'),
-    );
-  }
-}
-
-class CategoryList extends StatelessWidget {
-  const CategoryList({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: ListView(
-        children: [
-          CategoryItem(name: 'Category 1'),
-          CategoryItem(name: 'Category 2'),
-          CategoryItem(name: 'Category 3'),
-        ],
-      ),
-    );
-  }
-}
-
-class CategoryItem extends StatelessWidget {
-  final String name;
-
-  CategoryItem({super.key, required this.name});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(name),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ExpenseScreen(categoryName: name),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Welcome, John Doe!',
+                  style: TextStyle(
+                    fontSize: 24.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 16.0),
+                Text(
+                  'Total Expenses: \$${totalExpenses.toStringAsFixed(2)}',
+                  style: TextStyle(fontSize: 18.0),
+                ),
+              ],
+            ),
           ),
-        );
-      },
-    );
-  }
-}
-
-class ExpenseScreen extends StatelessWidget {
-  final String categoryName;
-
-  ExpenseScreen({super.key, required this.categoryName});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(categoryName),
-      ),
-      body: const Column(
-        children: [
-          ExpenseList(),
-          AddExpenseButton(),
+          Expanded(
+            child: ListView.builder(
+              itemCount: categories.length,
+              itemBuilder: (context, index) {
+                final category = categories[index];
+                return ListTile(
+                  title: Text(category.name),
+                  subtitle: Text('Total Expenses: \$${category.getTotalExpenses().toStringAsFixed(2)}'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ExpenseScreen(category: category),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class ExpenseList extends StatelessWidget {
-  const ExpenseList({super.key});
+class Category {
+  final String name;
+  final List<Expense> expenses;
 
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: ListView(
-        children: [
-          ExpenseItem(value: 10, description: 'Expense 1'),
-          ExpenseItem(value: 20, description: 'Expense 2'),
-          ExpenseItem(value: 30, description: 'Expense 3'),
-        ],
-      ),
-    );
+  Category({required this.name, required this.expenses});
+
+  double getTotalExpenses() {
+    double totalExpenses = 0.0;
+    for (var expense in expenses) {
+      totalExpenses += expense.value;
+    }
+    return totalExpenses;
   }
 }
 
-class ExpenseItem extends StatelessWidget {
+class Expense {
   final double value;
   final String description;
 
-  ExpenseItem({super.key, required this.value, required this.description});
+  Expense({required this.value, required this.description});
+}
+
+class ExpenseScreen extends StatelessWidget {
+  final Category category;
+
+  ExpenseScreen({required this.category});
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(description),
-      subtitle: Text('Value: \$${value.toStringAsFixed(2)}'),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(category.name),
+      ),
+      body: ListView.builder(
+        itemCount: category.expenses.length,
+        itemBuilder: (context, index) {
+          final expense = category.expenses[index];
+          return ListTile(
+            title: Text('\$${expense.value.toStringAsFixed(2)}'),
+            subtitle: Text(expense.description),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.add),
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) => AddExpensePopup(),
+          );
+        },
+      ),
     );
   }
 }
 
-class AddExpenseButton extends StatelessWidget {
-  const AddExpenseButton({super.key});
-
+class AddExpensePopup extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: () {
-        showDialog(
-          context: context,
-          builder: (context) => const AddExpensePopup(),
-        );
-      },
-      child: const Text('Add Expense'),
-    );
-  }
+  _AddExpensePopupState createState() => _AddExpensePopupState();
 }
 
-class AddExpensePopup extends StatelessWidget {
-  const AddExpensePopup({super.key});
+class _AddExpensePopupState extends State<AddExpensePopup> {
+  final TextEditingController valueController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add Expense'),
-      content: const Column(
+      title: Text('Add Expense'),
+      content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
-            decoration: InputDecoration(labelText: 'Value'),
+            controller: valueController,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: 'Value',
+            ),
           ),
           TextField(
-            decoration: InputDecoration(labelText: 'Description'),
+            controller: descriptionController,
+            decoration: InputDecoration(
+              labelText: 'Description',
+            ),
           ),
         ],
       ),
       actions: [
         ElevatedButton(
           onPressed: () {
-            Navigator.pop(context);
+            final double value = double.tryParse(valueController.text) ?? 0.0;
+            final String description = descriptionController.text;
+            final Expense expense = Expense(value: value, description: description);
+            Navigator.pop(context, expense);
           },
-          child: const Text('Cancel'),
+          child: Text('Add'),
         ),
-        ElevatedButton(
+        TextButton(
           onPressed: () {
-            // Add expense logic
             Navigator.pop(context);
           },
-          child: const Text('Add'),
+          child: Text('Cancel'),
         ),
       ],
     );
